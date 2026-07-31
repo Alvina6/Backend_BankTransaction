@@ -27,6 +27,13 @@ const userSchema = new mongoose.Schema(
       minlength: [6, 'Password must be at least 6 characters long'],
       select: false,
     },
+    
+    systemUser:{
+      type: Boolean,
+      default:false,
+      immutable:true,
+      select:false,
+    }
   },
   {
     timestamps: true,
@@ -36,13 +43,12 @@ const userSchema = new mongoose.Schema(
 // Hash password before saving
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) {
-    return
+    return;
   }
 
   const hashedPassword = await bcrypt.hash(this.password, 10);
   this.password = hashedPassword;
-
-  return 
+  return ;
 });
 
 // Compare password

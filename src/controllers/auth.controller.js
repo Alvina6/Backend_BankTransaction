@@ -2,56 +2,71 @@ const userModel= require('../models/user.model');
 const jwt= require('jsonwebtoken');
 const { sendRegistrationEmail } = require('../services/email.service');
 
-async function registerUser(req,res){
-  const {name,email,password}= req.body;  
+async function registerUser(req, res) {
+  const body = req.body || {};
+  const { name, email, password } = body;
 
-  const isExsist= await userModel.findOne({email});
-  if(isExsist){
-    return res.status(400).json({message:'Email already exists'})
+  if (!name || !email || !password) {
+    return res.status(400).json({ message: 'Name, email and password are required' });
   }
 
-  const user= await userModel.create({name,email,password});
+  const isExist = await userModel.findOne({ email });
+  if (isExist) {
+    return res.status(400).json({ message: 'Email already exists' });
+  }
 
-  const token= jwt.sign({id:user._id},process.env.JWT_SECRET,{expiresIn:'3d'});
+  const user = await userModel.create({ name, email, password });
 
-  res.cookie('token',token,)
+  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '3d' });
 
-  res.status(201).json({message:'User registered successfully',user:{
-    id:user._id,
-    name:user.name,
-    email:user.email
+  res.cookie('token', token);
 
-  },token})
+  res.status(201).json({
+    message: 'User registered successfully',
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+    },
+    token,
+  });
 
-  await sendRegistrationEmail(user.email,user.name);
-
+  await sendRegistrationEmail(user.email, user.name);
 }
 
+async function loginUser(req, res) {
+  const body = req.body || {};
+  const { email, password } = body;
 
-async function loginUser(req,res){
-  const {email,password}= req.body;
-
-  const user= await userModel.findOne({email}).select('+password');
-
-  if(!user){
-    return res.status(400).json({message:'Invalid email or password'})
-  }
-  const isValidPassword=await user.comparePassword(password)
-
-  if(!isValidPassword){
-    return res.status(400).json({message:'Invalid email or password'})
+  if (!email || !password) {
+    return res.status(400).json({ message: 'Email and password are required' });
   }
 
-  const token= jwt.sign({id:user._id},process.env.JWT_SECRET,{expiresIn:'3d'});
- 
-  
-  res.cookie('token', token,)
+  const user = await userModel.findOne({ email }).select('+password');
 
-  res.status(200).json({message:'User logged in successfully',user:{
-    id:user._id,
-    name:user.name,
-    email:user.email
-  },token})
+  if (!user) {
+    return res.status(400).json({ message: 'Invalid email or password' });
+  }
+
+  const isValidPassword = await user.comparePassword(password);
+
+  if (!isValidPassword) {
+    return res.status(400).json({ message: 'Invalid email or password' });
+  }
+
+  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '3d' });
+
+  res.cookie('token', token);
+
+  res.status(200).json({
+    message: 'User logged in successfully',
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+    },
+    token,
+  });
 }
 
 module.exports= {registerUser,loginUser}
