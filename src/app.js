@@ -12,6 +12,9 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+app.get('/',(req,res)=>{
+  res.send('Welcome to the Bank Transaction API');
+});
 app.use('/api/auth', authRoutes);
 app.use('/api/account', accountRoutes);
 app.use('/api/transaction', transactionRoutes);
