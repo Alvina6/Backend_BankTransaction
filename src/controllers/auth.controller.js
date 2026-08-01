@@ -2,6 +2,8 @@ const userModel= require('../models/user.model');
 const jwt= require('jsonwebtoken');
 const { sendRegistrationEmail } = require('../services/email.service');
 
+const BlackListModel = require('../models/blackList.model');
+
 async function registerUser(req, res) {
   const body = req.body || {};
   const { name, email, password } = body;
@@ -68,5 +70,18 @@ async function loginUser(req, res) {
     token,
   });
 }
+ async function logoutUser(req, res) {
+  const token = req.cookies.token || req.headers.authorization?.split(' ')[1];
+  if (!token) {
+    return res.status(400).json({ message: 'Token is required for logout' });
+  }
 
-module.exports= {registerUser,loginUser}
+
+
+await BlackListModel.create({ token });
+
+  res.clearCookie('token');
+  res.status(200).json({ message: 'User logged out successfully' });
+}
+
+module.exports= {registerUser,loginUser,logoutUser};
